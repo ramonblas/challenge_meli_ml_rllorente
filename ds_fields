@@ -1,0 +1,84 @@
+### sites
+id -> item key
+title : parse title?
+
+seller.registration_date
+seller.tags : attribute list tags
+
+seller.seller_reputation.level_id [ordinal]
+seller.seller_reputation.power_seller_status [ordinal]
+seller.seller_reputation.transactions.cancelled [count]
+seller.seller_reputation.transactions.completed [count]
+seller.seller_reputation.transactions.ratings.negative [count]
+seller.seller_reputation.transactions.ratings.neutral [count]
+seller.seller_reputation.transactions.ratings.positive [count]
+seller.seller_reputation.transactions.total [count]
+
+seller.metrics.sales.completed
+seller.metrics.claims.value [count]
+seller.metrics.claims.rate [float]
+seller.metrics.delayed_handling_time.value [count]
+seller.metrics.delayed_handling_time.rate [float]
+seller.metrics.delayed_handling_time.excluded.rate [float]
+seller.metrics.cancellations.value [count]
+seller.metrics.cancellations.rate
+
+price
+prices.0.type [categ]
+prices.0.amount [count]
+prices.0.conditions.start_time
+prices.0.conditions.end_time
+prices.0.conditions.eligible [bool]
+prices.0.amount [count]
+prices.0.regular_amount [count]
+prices.0.exchange_rate_context [categ?]
+
+sale_price
+currency_id [categ]
+available_quantity [count]
+sold_quantity [count]
+buying_mode [categ]
+listing_type_id [categ]
+stop_time [datetime]
+condition [categ]
+accepts_mercadopago [bool]
+
+installments.quantity
+installments.amount
+installments.rate
+
+address.state_id [country-code]
+address.state_name
+address.city_name
+
+shipping.free_shipping [bool]
+shipping.mode [categ]
+shipping.logistic_type [categ]
+store_pick_up [bool]
+
+attributes.0.id [categ]
+attributes.0.value_name [categ]
+
+original_price [float]
+tags [parse str categ?]
+
+### Items
+
+price
+base_price
+initial_quantity
+available_quantity
+listing_type_id [categ]
+start_time
+stop_time
+sold_quantity
+condition
+accepts_mergadopago [bool]
+international_delivery_mode [bool]
+
+attributes
+status [bool]
+warranty
+date_created
+date_updated
+health
