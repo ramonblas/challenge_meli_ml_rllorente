@@ -16,6 +16,14 @@ class MeliApiClient:
         self.SITES_URL = ("https://api.mercadolibre.com/sites/MLA/"
                    "search?limit={limit}&offset={offset}&q={query}")
         self.ITEMS_URL = ("https://api.mercadolibre.com/items/{}")
+        self.ITEMSMETRICS_URL = ("https://api.mercadolibre.com/items/"
+                                 "visits?ids={item_ids_csv}&"
+                                 "date_from={date_from}&date_to={date_to}")
+        self.USERMETRICS_URL = ("https://api.mercadolibre.com/users/{user_id}/"
+                                "items_visits?date_from={date_from}&date_to={date_to}")
+        date_to = datetime.datetime.now()
+        self.DATE_FROM = (date_to - datetime.timedelta(30)).isoformat()
+        self.DATE_TO = date_to.isoformat()
         # strings para el parametro query de SITES
         self.SITES_Q_1 = ['tv%204k', 'microondas', 'phone', 
                         'celular', 'auto%toyota', 'cablehdmi', 
@@ -48,6 +56,19 @@ class MeliApiClient:
         for item in items:
             yield self.ITEMS_URL.format(item)
         
+    def items_metrics_url_query_gen(self, items):
+        for item in items:
+            params = {'item_ids_csv': item,
+                     'date_from': self.DATE_FROM,
+                     'date_to': self.DATE_TO}
+            yield self.ITEMSMETRICS_URL.format(**params)
+
+    def user_metrics_url_query_gen(self, user_ids):
+        for user in users:
+            params = {'user_id': user,
+                      'date_from': self.DATE_FROM,
+                      'date_to': self.DATE_TO}
+
     def _batch_generator(self, iterable, size):
         sourceiter = iter(iterable)
         while True:
@@ -80,6 +101,10 @@ class MeliApiClient:
                             count += 1
                             if key == 'results':
                                 master_dict[data[i].get('id')] = data[i]
+                            elif key == 'user_id':
+                                master_dict[request.json().get('user_id')] = data
+                            elif key == 'item_id':
+                                master_dict[request.json().get('item_id')] = data
                             else:
                                 master_dict[request.json().get('id')] = data
                         except IndexError as e:                            
@@ -95,7 +120,7 @@ if __name__ == '__main__':
        .isoformat()
        .replace(':', '_')
        .split('.')[0])
-    logging.basicConfig(filename=f'logs/api_meli_{now}', 
+    logging.basicConfig(filename=f'logs/api_meli_{now}.log', 
                     level=logging.INFO)
     # Creo instancia
     mac = MeliApiClient()
@@ -111,8 +136,6 @@ if __name__ == '__main__':
     # items stage
     r2 = mac.thread_wrapper_requests(
             50,
-            # funcion parcial, para luego darle otro argumento 
-            # en el wrapper de concurrencia
             partial(mac.items_url_query_gen, sites_dict)
             )
     items_dict, count_items = mac.process_todict(r2, 'id')
@@ -120,4 +143,27 @@ if __name__ == '__main__':
     # guardo resultados en un diccionario
     with open(f'results/meli_items_api_data_{now}.p', 'wb') as f:
         pickle.dump(items_dict, f)
-    logging.info("Finished sites request")
+    logging.info("Finished items request")
+
+    # items metrics
+    r3 = mac.thread_wrapper_requests(
+            50,
+            partial(mac.items_metrics_url_query_gen, sites_dict)
+            )
+    items_metrics_dict, count_item_metrics = mac.process_todict(r3, 'item_id')
+    logging.info(f"{count_item_metrics} results")
+    with open(f'results/meli_items_metrics_api_data_{now}.p', 'wb') as f:
+        pickle.dump(items_metrics_dict, f)
+    logging.info("Finished item metrics request")
+
+    # user metrics
+    seller_ids = (item[k].get('seller_id') for k in items_metrics_dict)
+    r4 = mac.thread_wrapper_requests(
+            50,
+            partial(mac.user_metrics_url_query_gen,
+                    seller_ids))
+    seller_metrics_dict, count_seller_metrics = mac.process_todict(r4, 'user_id')
+    with open(f'results/meli_seller_metrics_api_data_{now}.p', 'wb') as f:
+        pickle.dump(seller_metrics_dict, f)
+    logging.info("Finished seller metrics request")
+
